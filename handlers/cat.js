@@ -61,7 +61,6 @@ module.exports = (req,res) => {
 
         form.parse(req,(err,fields,files) => {
             if(err) throw err;
-            let filePath = cats;
 
             let oldPath = files.upload.path;
             let newPath = path.normalize(path.join(__dirname,'../content/images/' + files.upload.name));
@@ -83,7 +82,7 @@ module.exports = (req,res) => {
                 });
             });
         });
-    }else if(pathname === "/cats/add-breed" && req.method === 'POST'){
+    }else if(pathname === '/cats/add-breed' && req.method === 'POST'){
         let filePath = path.normalize(path.join(__dirname, "../data/breeds.json"));
         
         let formData = "";  
@@ -112,6 +111,26 @@ module.exports = (req,res) => {
             res.writeHead(301, { "location": "/" });
             res.end();
         });
+    }else if(pathname.includes('/cats-edit') && req.method === 'GET'){
+        let filePath = path.normalize(path.join(__dirname,'../views/editCat.html'));
+        const input = fs.createReadStream(filePath);
+        const currentCat = cats[Number(pathname.match(/\d+$/g)) - 1];
+        console.log(currentCat);
+
+        input.on('data', (data) => {
+            let modifiedData = data.toString().replace('{{id}}',currentCat.id);
+            modifiedData = modifiedData.toString().replace('{{name}}',currentCat.name);
+            modifiedData = modifiedData.toString().replace('{{description}}',currentCat.description);
+            
+            const breedsAsOption = breeds.map((b) => `<option value ="${b}">${b}</option>`);
+            modifiedData = modifiedData.replace("{{catBreeds}}",breedsAsOption.join("/"));
+
+            modifiedData = modifiedData.replace("{{breed}}",currentCat.breed);
+            res.write(modifiedData);
+        });
+
+        input.on("end",() => res.end());
+        input.on("error",(err) => console.log(err));
     }else{
         true;
     }
